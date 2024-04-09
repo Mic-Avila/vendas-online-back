@@ -14,6 +14,7 @@ import { CacheModule as CacheModuleSERVICECASH } from 'src/cache/cache.module';
     CacheModuleSERVICECASH],
 
   controllers: [CityController],
-  providers: [CityService]
+  providers: [CityService],
+  exports: [CityService]
 })
 export class CityModule {}
