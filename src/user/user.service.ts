@@ -7,43 +7,66 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class UserService {
+  constructor(
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
+  ) {}
 
-    constructor(
-     @InjectRepository(UserEntity)
-     private readonly userRepository : Repository<UserEntity>) {}
+  async createUser(createUser: CreateUserDto): Promise<UserEntity> {
+    const saltOrRounds = 10;
+    const passwordHashed = await bcrypt.hash(createUser.password, saltOrRounds);
 
+    return this.userRepository.save({
+      ...createUser,
+      typeUser: 1,
+      password: passwordHashed,
+    });
+  }
 
+  async findAllUsers(): Promise<UserEntity[]> {
+    return this.userRepository.find();
+  }
 
-    async createUser(createUser: CreateUserDto): Promise<UserEntity> {
-
-        const saltOrRounds = 10;
-        const passwordHashed = await bcrypt.hash(createUser.password, saltOrRounds)
-
-        return this.userRepository.save({
-            ...createUser,
-            typeUser: 1,
-            password: passwordHashed
-
-        })
-
+  async findUserById(userId: number): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException(`Usuario ${userId} não encontrado`);
     }
 
-    async findAllUsers():Promise<UserEntity[]>{
-        return this.userRepository.find()
+    return user;
+  }
+
+  async getUserByUsingRelations(userId: number): Promise<UserEntity> {
+    return await this.userRepository.findOne({
+      where: {
+        id: userId,
+      },
+      relations: {
+        addresses: {
+          city: {
+            state: true,
+          },
+        },
+      },
+    });
+  }
+
+
+  async findUserByEmail(email: string): Promise<UserEntity> {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: email,
+      },
+    });
+    if (!user) {
+      throw new NotFoundException(`Email: ${email} não encontrado`);
     }
 
-
-    async findUserById(userId: number): Promise<UserEntity>{
-        const user = await this.userRepository.findOne({
-            where: {
-                id: userId
-            }
-        })
-        if(!user){
-            throw new NotFoundException(`Usuario ${userId} não encontrado`)
-        }
-
-        return user
-    }
+    return user;
+  }
 
 }
